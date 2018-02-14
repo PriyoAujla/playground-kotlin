@@ -138,11 +138,15 @@ class UserTable(override val name: String) : Table<User>() {
             favColourColumn
     )
 
-    override fun mapTo(thing: User): Set<ColumnValue> = setOf(
-            nameColumn.withValue(thing.name),
-            ageColumn.withValue(thing.age),
-            favColourColumn.withValue(thing.favColour)
-    )
+    override fun mapTo(thing: User): Set<ColumnValue> {
+        val columnValues = mutableSetOf(
+                nameColumn.withValue(thing.name),
+                ageColumn.withValue(thing.age)
+        )
+
+        thing.favColour?.let { columnValues.add(favColourColumn.withValue(it)) }
+        return columnValues
+    }
 
     override fun uniqueKey(thing: User) = idColumn.withValue(thing.id)
 }
@@ -186,7 +190,7 @@ data class ColourColumn(
     override fun toSqlString(value: Colour): ValueAsSqlString = delegate.toSqlString(value.value)
 }
 
-data class User(val id: Int = 0, val name: Name, val age: Age, val favColour: Colour)
+data class User(val id: Int = 0, val name: Name, val age: Age, val favColour: Colour?)
 
 fun main(args: Array<String>) {
 
