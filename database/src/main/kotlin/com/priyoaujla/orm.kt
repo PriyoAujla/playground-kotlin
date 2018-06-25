@@ -1,6 +1,7 @@
 package com.priyoaujla
 
 import com.zaxxer.hikari.HikariDataSource
+import org.hsqldb.Server
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import javax.sql.DataSource
@@ -12,8 +13,16 @@ data class ColumnValue(val column: Column, val valueAsSqlString: ValueAsSqlStrin
 data class ValueAsSqlString(val value: String)
 
 val dataSource: DataSource by lazy {
+
+    val server = Server()
+    server.setDatabaseName(0, "mymemdb")
+    server.setDatabasePath(0, "mem:mymemdb")
+    server.setPort(9001)
+    server.setDaemon(true)
+    server.start()
+
     val dataSource = HikariDataSource().apply {
-        jdbcUrl = "jdbc:hsqldb:mem:mymemdb"
+        jdbcUrl = "jdbc:hsqldb:hsql://localhost:9001/mymemdb"
         username = "SA"
         password = ""
     }
@@ -283,9 +292,9 @@ fun main(args: Array<String>) {
 
     val userTable: Table<User> = UserTable("user", dataSource)
     userTable.insert(User(name = Name("Betty"), age = Age(23), favColour = Colour("Orange")))
-    userTable.update(User(1, Name("Robert"), Age(34), Colour("Blue")))
+    userTable.update(User(0, Name("Robert"), Age(34), Colour("Blue")))
 
-    println(userTable.get(UserTable.idColumn to UserTable.idColumn.withValue(1)))
+    println(userTable.get(UserTable.idColumn to UserTable.idColumn.withValue(0)))
 //    userTable.delete(User(1, Name("some name"), Age(34), Colour("fav colour")))
-
+    println(userTable.get(UserTable.idColumn to UserTable.idColumn.withValue(0)))
 }
