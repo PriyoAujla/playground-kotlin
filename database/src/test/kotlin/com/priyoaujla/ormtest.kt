@@ -10,7 +10,7 @@ class OrmTest {
 
     @JvmField
     @Rule
-    val database = TestDatabase(before = ::setup, after = ::tearDown)
+    val database = TestDatabase(before = ::setup, after = ::tearDown, databasePort = 9002)
 
     private val userTable: Table<User> = UserTable("user", database.dataSource)
 

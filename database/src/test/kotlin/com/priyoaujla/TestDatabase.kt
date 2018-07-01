@@ -8,14 +8,15 @@ import javax.sql.DataSource
 
 class TestDatabase(
     val before: (Connection) -> Unit = {},
-    val after: (Connection) -> Unit = {}
+    val after: (Connection) -> Unit = {},
+    val databasePort: Int
 ) : ExternalResource() {
 
     private val server = Server()
 
     val dataSource: DataSource by lazy {
         HikariDataSource().apply {
-            jdbcUrl = "jdbc:hsqldb:hsql://localhost:9001/mymemdb"
+            jdbcUrl = "jdbc:hsqldb:hsql://localhost:$databasePort/mymemdb"
             username = "SA"
             password = ""
         }
@@ -24,7 +25,7 @@ class TestDatabase(
     override fun before() {
         server.setDatabaseName(0, "mymemdb")
         server.setDatabasePath(0, "mem:mymemdb")
-        server.setPort(9001)
+        server.setPort(databasePort)
         server.setDaemon(true)
         server.start()
 
