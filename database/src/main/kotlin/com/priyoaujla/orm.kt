@@ -1,7 +1,5 @@
 package com.priyoaujla
 
-import com.zaxxer.hikari.HikariDataSource
-import org.hsqldb.Server
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import javax.sql.DataSource
@@ -9,35 +7,6 @@ import javax.sql.DataSource
 
 data class ColumnName(val value: String)
 data class ColumnValueSetter(val column: Column, val setter: (Int, PreparedStatement) -> PreparedStatement)
-
-val dataSource: DataSource by lazy {
-
-    val server = Server()
-    server.setDatabaseName(0, "mymemdb")
-    server.setDatabasePath(0, "mem:mymemdb")
-    server.port = 9001
-    server.setDaemon(true)
-    server.start()
-
-    val dataSource = HikariDataSource().apply {
-        jdbcUrl = "jdbc:hsqldb:hsql://localhost:9001/mymemdb"
-        username = "SA"
-        password = ""
-    }
-
-    dataSource.connection.use {
-        it.createStatement().executeUpdate("""CREATE TABLE user (
-            | id INT NOT NULL IDENTITY,
-            | name VARCHAR(255) NOT NULL,
-            | age INT NOT NULL,
-            | fav_colour VARCHAR(64),
-            | PRIMARY KEY (id)
-            | );
-        """.trimMargin())
-    }
-
-    dataSource
-}
 
 interface Column {
     val name: ColumnName
@@ -264,14 +233,3 @@ data class ColourColumn(
 }
 
 data class User(val id: Int = 0, val name: Name, val age: Age, val favColour: Colour?)
-
-fun main(args: Array<String>) {
-
-    val userTable: Table<User> = UserTable("user", dataSource)
-    userTable.insert(User(name = Name("Betty"), age = Age(23), favColour = Colour("Orange")))
-    userTable.update(User(0, Name("Robert"), Age(34), Colour("Blue")))
-
-    println(userTable.get(UserTable.idColumn to UserTable.idColumn.withValue(0)))
-    userTable.delete(User(1, Name("some name"), Age(34), Colour("fav colour")))
-    println(userTable.get(UserTable.idColumn to UserTable.idColumn.withValue(0)))
-}
