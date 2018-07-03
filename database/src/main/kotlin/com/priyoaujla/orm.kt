@@ -17,7 +17,7 @@ val dataSource: DataSource by lazy {
     val server = Server()
     server.setDatabaseName(0, "mymemdb")
     server.setDatabasePath(0, "mem:mymemdb")
-    server.setPort(9001)
+    server.port = 9001
     server.setDaemon(true)
     server.start()
 
@@ -161,12 +161,12 @@ abstract class Table<T>(private val dataSource: DataSource) {
         if (isAnIdentifier && tableHasSuchAColumn) {
             this.dataSource.connection.use {
                 val sqlDelete = """
-                    DELETE FROM ${name} WHERE ${columnValue.column.name.value} = ${columnValue.valueAsSqlString.value}
+                    DELETE FROM ${name} WHERE ${columnValue.column.name.value} = ?
                 """.trimIndent()
 
-                it
-                    .prepareStatement(sqlDelete)
-                    .executeUpdate()
+                val preparedStatement = it.prepareStatement(sqlDelete)
+                columnValue.setter(1, preparedStatement)
+                preparedStatement.executeUpdate()
             }
         } else {
             error("Column value is not a key or is not a valid column")
@@ -232,7 +232,7 @@ class UserTable(override val name: String, dataSource: DataSource) : Table<User>
             resultSet.getInt(idColumn.name.value),
             Name(resultSet.getString(nameColumn.name.value)),
             Age(resultSet.getInt(ageColumn.name.value)),
-            Colour(resultSet.getString(favColourColumn.name.value))
+            resultSet.getString(favColourColumn.name.value)?.let { Colour(it) }
         )
     }
 

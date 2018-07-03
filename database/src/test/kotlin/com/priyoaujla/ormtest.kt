@@ -60,5 +60,14 @@ class OrmTest {
 
         assertNull(userTable.get(UserTable.idColumn to UserTable.idColumn.withValue(0)))
     }
+
+    @Test
+    fun `inserting nullable value`() {
+        val user = User(name = Name("Betty"), age = Age(23), favColour = null)
+        userTable.insert(user)
+        val result = userTable.get(UserTable.idColumn to UserTable.idColumn.withValue(0))
+
+        assertEquals(user, result)
+    }
 }
 
