@@ -4,8 +4,10 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
+import java.math.BigDecimal
 import java.sql.Connection
 import java.sql.ResultSet
+import java.util.*
 import javax.sql.DataSource
 
 class OrmTest {
@@ -15,6 +17,7 @@ class OrmTest {
     val database = TestDatabase(before = ::setup, after = ::tearDown, databasePort = 9002)
 
     private val userTable: Table<User> = UserTable("user", database.dataSource)
+    private val billTable: Table<Bill> = BillTable("bill", database.dataSource)
 
     private fun setup(connection: Connection) {
         connection.use {
@@ -26,12 +29,20 @@ class OrmTest {
             | PRIMARY KEY (id)
             | );
         """.trimMargin())
+
+            it.createStatement().executeUpdate("""CREATE TABLE bill (
+            | id VARCHAR(255) NOT NULL,
+            | amount DOUBLE NOT NULL,
+            | PRIMARY KEY (id)
+            | );
+        """.trimMargin())
         }
     }
 
     private fun tearDown(connection: Connection) {
         connection.use {
             it.createStatement().executeUpdate("""DROP TABLE user;""".trimMargin())
+            it.createStatement().executeUpdate("""DROP TABLE bill;""".trimMargin())
         }
     }
 
@@ -70,6 +81,17 @@ class OrmTest {
         val result = userTable.get(UserTable.idColumn to UserTable.idColumn.withValue(0))
 
         assertEquals(user, result)
+    }
+
+    @Test
+    fun `inserting uuid based primary key`() {
+        val uuid = UUID.randomUUID()
+        val bill = Bill(id = uuid, amount = Money(BigDecimal.valueOf(23.01)))
+        billTable.insert(bill)
+        val result = billTable.get(BillTable.idColumn to BillTable.idColumn.withValue(uuid))!!
+
+        assertEquals(bill.id, result.id)
+        assertEquals(bill.amount.value.toDouble(), result.amount.value.toDouble(), 0.01)
     }
 }
 
@@ -147,3 +169,54 @@ data class ColourColumn(
 
 data class User(val id: Int = 0, val name: Name, val age: Age, val favColour: Colour?)
 
+data class Money(val value: BigDecimal)
+data class AmountColumn(
+        override val name: ColumnName = ColumnName("amount"),
+        override val required: Boolean
+) : TypeColumn<Money> {
+
+    private val delegate = BigDecimalColumn(name, required)
+
+    override fun withValue(value: Money): ColumnValueSetter = delegate.withValue(value.value).copy(column = this)
+}
+data class UUIDColumn(
+        override val name: ColumnName = ColumnName("id"),
+        override val required: Boolean
+): TypeColumn<UUID> {
+
+    private val delegate = StringColumn(name, required)
+
+    override fun withValue(value: UUID): ColumnValueSetter = delegate.withValue(value.toString()).copy(column = this)
+}
+data class Bill(val id: UUID, val amount: Money)
+
+class BillTable(override val name: String, dataSource: DataSource) : Table<Bill>(dataSource) {
+
+    companion object {
+        val idColumn = KeyColumn(UUIDColumn(ColumnName("id"), required = true))
+        val amountColumn = AmountColumn(required = true)
+    }
+
+    override val columns = setOf(
+            idColumn,
+            amountColumn
+    )
+
+    override fun mapTo(thing: Bill): Set<ColumnValueSetter> {
+        val columnValues = mutableSetOf(
+                idColumn.withValue(thing.id),
+                amountColumn.withValue(thing.amount)
+        )
+
+        return columnValues
+    }
+
+    override fun mapFrom(resultSet: ResultSet): Bill {
+        return Bill(
+                UUID.fromString(resultSet.getString(idColumn.name.value)),
+                Money(resultSet.getBigDecimal(amountColumn.name.value))
+        )
+    }
+
+    override fun uniqueKey(thing: Bill) = idColumn.withValue(thing.id)
+}

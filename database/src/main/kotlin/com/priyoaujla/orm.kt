@@ -1,5 +1,6 @@
 package com.priyoaujla
 
+import java.math.BigDecimal
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import javax.sql.DataSource
@@ -35,6 +36,15 @@ data class IntColumn(override val name: ColumnName, override val required: Boole
     override fun withValue(value: Int) = toColumnValue(value) { index, it ->
         it.apply {
             setInt(index, value)
+        }
+    }
+}
+
+data class BigDecimalColumn(override val name: ColumnName, override val required: Boolean) : TypeColumn<BigDecimal> {
+
+    override fun withValue(value: BigDecimal) = toColumnValue(value) { index, it ->
+        it.apply {
+            setBigDecimal(index, value)
         }
     }
 }
