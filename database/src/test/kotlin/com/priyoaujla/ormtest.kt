@@ -31,9 +31,17 @@ class OrmTest {
         """.trimMargin())
 
             it.createStatement().executeUpdate("""CREATE TABLE bill (
-            | id VARCHAR(255) NOT NULL,
+            | id UUID NOT NULL,
             | amount DOUBLE NOT NULL,
             | PRIMARY KEY (id)
+            | );
+        """.trimMargin())
+
+            it.createStatement().executeUpdate("""CREATE TABLE document (
+            | id VARCHAR(255) NOT NULL,
+            | version INT NOT NULL,
+            | text CLOB NOT NULL,
+            | PRIMARY KEY (id, version)
             | );
         """.trimMargin())
         }
@@ -43,6 +51,7 @@ class OrmTest {
         connection.use {
             it.createStatement().executeUpdate("""DROP TABLE user;""".trimMargin())
             it.createStatement().executeUpdate("""DROP TABLE bill;""".trimMargin())
+            it.createStatement().executeUpdate("""DROP TABLE document;""".trimMargin())
         }
     }
 
@@ -50,7 +59,7 @@ class OrmTest {
     fun `inserting and retrieving`() {
         val user = User(name = Name("Betty"), age = Age(23), favColour = Colour("Orange"))
         userTable.insert(user)
-        val result = userTable.get(UserTable.idColumn to UserTable.idColumn.withValue(0))
+        val result = userTable.get(UserTable.idColumn.withValue(0))
 
         assertEquals(user, result)
     }
@@ -58,10 +67,10 @@ class OrmTest {
     @Test
     fun `inserting and updating`() {
         userTable.insert(User(name = Name("Betty"), age = Age(23), favColour = Colour("Orange")))
-        val oldUser = userTable.get(UserTable.idColumn to UserTable.idColumn.withValue(0))!!
+        val oldUser = userTable.get(UserTable.idColumn.withValue(0))!!
         val newUser = oldUser.copy(name = Name("Julie"), age = Age(55), favColour = Colour("Blue"))
         userTable.update(newUser)
-        val result = userTable.get(UserTable.idColumn to UserTable.idColumn.withValue(0))
+        val result = userTable.get(UserTable.idColumn.withValue(0))
 
         assertEquals(newUser, result)
     }
@@ -69,16 +78,16 @@ class OrmTest {
     @Test
     fun `inserting and deleting`() {
         userTable.insert(User(name = Name("Betty"), age = Age(23), favColour = Colour("Orange")))
-        userTable.delete(userTable.get(UserTable.idColumn to UserTable.idColumn.withValue(0))!!)
+        userTable.delete(userTable.get(UserTable.idColumn.withValue(0))!!)
 
-        assertNull(userTable.get(UserTable.idColumn to UserTable.idColumn.withValue(0)))
+        assertNull(userTable.get(UserTable.idColumn.withValue(0)))
     }
 
     @Test
     fun `inserting nullable value`() {
         val user = User(name = Name("Betty"), age = Age(23), favColour = null)
         userTable.insert(user)
-        val result = userTable.get(UserTable.idColumn to UserTable.idColumn.withValue(0))
+        val result = userTable.get(UserTable.idColumn.withValue(0))
 
         assertEquals(user, result)
     }
@@ -88,7 +97,7 @@ class OrmTest {
         val uuid = UUID.randomUUID()
         val bill = Bill(id = uuid, amount = Money(BigDecimal.valueOf(23.01)))
         billTable.insert(bill)
-        val result = billTable.get(BillTable.idColumn to BillTable.idColumn.withValue(uuid))!!
+        val result = billTable.get(BillTable.idColumn.withValue(uuid))!!
 
         assertEquals(bill.id, result.id)
         assertEquals(bill.amount.value.toDouble(), result.amount.value.toDouble(), 0.01)
@@ -211,4 +220,38 @@ class BillTable(override val name: String, dataSource: DataSource) : Table<Bill>
     }
 
     override fun uniqueKey(thing: Bill) = idColumn.withValue(thing.id)
+}
+
+data class Document(val id: UUID, val version: Int, val text: String)
+class DocumentTable(override val name: String, dataSource: DataSource) : Table<Document>(dataSource) {
+
+    companion object {
+        val idColumn = KeyColumn(UUIDColumn(ColumnName("id")))
+        val versionColumn = IntColumn(ColumnName("version"))
+        val textColumn = StringColumn(ColumnName("text"))
+    }
+
+    override val columns = setOf(
+            idColumn,
+            versionColumn,
+            textColumn
+    )
+
+    override fun mapTo(thing: Document): Set<ColumnValueSetter> {
+        return mutableSetOf(
+                idColumn.withValue(thing.id),
+                versionColumn.withValue(thing.version),
+                textColumn.withValue(thing.text)
+        )
+    }
+
+    override fun mapFrom(resultSet: ResultSet): Document {
+        return Document(
+                UUID.fromString(resultSet.getString(idColumn.name.value)),
+                resultSet.getInt(versionColumn.name.value),
+                resultSet.getString(textColumn.name.value)
+        )
+    }
+
+    override fun uniqueKey(thing: Document) = idColumn.withValue(thing.id)
 }

@@ -140,18 +140,16 @@ abstract class Table<T>(private val dataSource: DataSource) {
         }
     }
 
-    fun get(id: Pair<IdColumn<*>, ColumnValueSetter>): T? {
+    fun get(id: ColumnValueSetter): T? {
         this.dataSource.connection.use {
             val sqlUpdate = """
                 SELECT *
                     FROM ${name}
-                    WHERE ${id.first.name.value} = ?
+                    WHERE ${id.column.name.value} = ?
             """.trimIndent()
 
             val preparedStatement = it.prepareStatement(sqlUpdate)
-            listOf(id.second).forEachIndexed { index, columnValue ->
-                columnValue.setter(index + 1, preparedStatement)
-            }
+            id.setter(1, preparedStatement)
 
             return preparedStatement.executeQuery().use { resultSet ->
                 if (resultSet.next()) {
