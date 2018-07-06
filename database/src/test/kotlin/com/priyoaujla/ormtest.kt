@@ -135,13 +135,6 @@ class UserTable(override val name: String, dataSource: DataSource) : Table<User>
         private val favColourColumn = ColourColumn()
     }
 
-    override val columns = setOf(
-            idColumn,
-            nameColumn,
-            ageColumn,
-            favColourColumn
-    )
-
     override fun mapTo(thing: User): Set<ColumnValueSetter> {
         return mutableSetOf(
                 idColumn.withValue(thing.id),
@@ -220,11 +213,6 @@ class BillTable(override val name: String, dataSource: DataSource) : Table<Bill>
         private val amountColumn = AmountColumn()
     }
 
-    override val columns = setOf(
-            idColumn,
-            amountColumn
-    )
-
     override fun mapTo(thing: Bill): Set<ColumnValueSetter> {
         return mutableSetOf(
                 idColumn.withValue(thing.id),
@@ -248,12 +236,6 @@ class DocumentTable(override val name: String, dataSource: DataSource) : Table<D
         val versionColumn = KeyColumn(IntColumn(ColumnName("version")))
         private val textColumn = StringColumn(ColumnName("text"))
     }
-
-    override val columns = setOf(
-            idColumn,
-            versionColumn,
-            textColumn
-    )
 
     override fun mapTo(thing: Document): Set<ColumnValueSetter> {
         return mutableSetOf(
