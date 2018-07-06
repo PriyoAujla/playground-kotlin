@@ -7,12 +7,12 @@ import javax.sql.DataSource
 
 
 data class ColumnName(val value: String)
-data class ColumnValueSetter(val column: Column, val setter: (Int, PreparedStatement) -> PreparedStatement)
+data class ColumnValueSetter(val column: Column, val value: String = "?", val setter: (Int, PreparedStatement) -> PreparedStatement)
 
 interface Column {
     val name: ColumnName
 
-    fun toColumnValue(value: Any, setter: (Int, PreparedStatement) -> PreparedStatement): ColumnValueSetter = ColumnValueSetter(this, setter)
+    fun toColumnValue(value: Any, setter: (Int, PreparedStatement) -> PreparedStatement): ColumnValueSetter = ColumnValueSetter(this, setter = setter)
 }
 
 interface TypeColumn<in T> : Column {
@@ -79,7 +79,7 @@ abstract class Table<T>(private val dataSource: DataSource) {
             this.dataSource.connection.use {
                 val sqlInsert = """
                 INSERT INTO ${name}(${values.map { it.column.name.value }.joinToString(", ")})
-                    VALUES(${values.map { "?" }.joinToString(", ")});
+                    VALUES(${values.map { it.value }.joinToString(", ")});
             """.trimIndent()
 
                 val preparedStatement = it.prepareStatement(sqlInsert)
@@ -102,8 +102,8 @@ abstract class Table<T>(private val dataSource: DataSource) {
             this.dataSource.connection.use {
                 val sqlUpdate = """
                 UPDATE $name
-                    SET ${newValues.map { "${it.column.name.value} = ?" }.joinToString(", ")}
-                    WHERE ${ids.map { "${it.column.name.value} = ?" }.joinToString(" AND ")}
+                    SET ${newValues.map { "${it.column.name.value} = ${it.value}" }.joinToString(", ")}
+                    WHERE ${ids.map { "${it.column.name.value} = ${it.value}" }.joinToString(" AND ")}
             """.trimIndent()
 
                 val preparedStatement = it.prepareStatement(sqlUpdate)
@@ -123,7 +123,7 @@ abstract class Table<T>(private val dataSource: DataSource) {
         if (ids.isNotEmpty()) {
             this.dataSource.connection.use {
                 val sqlDelete = """
-                    DELETE FROM $name WHERE ${ids.map { "${it.column.name.value} = ?" }.joinToString(" AND ")}
+                    DELETE FROM $name WHERE ${ids.map { "${it.column.name.value} = ${it.value}" }.joinToString(" AND ")}
                 """.trimIndent()
 
                 val preparedStatement = it.prepareStatement(sqlDelete)
@@ -142,7 +142,7 @@ abstract class Table<T>(private val dataSource: DataSource) {
             val sqlUpdate = """
                 SELECT *
                     FROM $name
-                    WHERE ${ids.map { "${it.column.name.value} = ?" }.joinToString(" AND ")}
+                    WHERE ${ids.map { "${it.column.name.value} = ${it.value}" }.joinToString(" AND ")}
             """.trimIndent()
 
             val preparedStatement = it.prepareStatement(sqlUpdate)
