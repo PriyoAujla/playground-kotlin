@@ -90,7 +90,7 @@ abstract class Table<T>(private val dataSource: DataSource) {
                 preparedStatement.execute()
             }
         } else {
-            error("Oops something went wrong")
+            error("No ids found")
         }
     }
 
@@ -114,7 +114,7 @@ abstract class Table<T>(private val dataSource: DataSource) {
                 preparedStatement.execute()
             }
         } else {
-            error("uh oh! Couldn't update!")
+            error("No ids found")
         }
     }
 
@@ -133,7 +133,7 @@ abstract class Table<T>(private val dataSource: DataSource) {
                 preparedStatement.executeUpdate()
             }
         } else {
-            error("Column value is not a key or is not a valid column")
+            error("No ids found")
         }
     }
 
@@ -159,6 +159,5 @@ abstract class Table<T>(private val dataSource: DataSource) {
     }
 
     internal abstract fun mapTo(thing: T): Set<ColumnValueSetter>
-    internal abstract fun uniqueKey(thing: T): ColumnValueSetter
     internal abstract fun mapFrom(resultSet: ResultSet): T?
 }

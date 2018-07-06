@@ -160,8 +160,6 @@ class UserTable(override val name: String, dataSource: DataSource) : Table<User>
                 resultSet.getString(favColourColumn.name.value)?.let { Colour(it) }
         )
     }
-
-    override fun uniqueKey(thing: User) = idColumn.withValue(thing.id)
 }
 
 data class Name(val value: String)
@@ -240,8 +238,6 @@ class BillTable(override val name: String, dataSource: DataSource) : Table<Bill>
                 Money(resultSet.getBigDecimal(amountColumn.name.value))
         )
     }
-
-    override fun uniqueKey(thing: Bill) = idColumn.withValue(thing.id)
 }
 
 data class Document(val id: UUID, val version: Int, val text: String)
@@ -274,6 +270,4 @@ class DocumentTable(override val name: String, dataSource: DataSource) : Table<D
                 resultSet.getString(textColumn.name.value)
         )
     }
-
-    override fun uniqueKey(thing: Document) = idColumn.withValue(thing.id)
 }
