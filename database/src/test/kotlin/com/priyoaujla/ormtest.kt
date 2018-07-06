@@ -25,8 +25,8 @@ class OrmTest {
             it.createStatement().executeUpdate("""CREATE TABLE user (
             | id INT NOT NULL IDENTITY,
             | name VARCHAR(255) NOT NULL,
-            | age INT NOT NULL,
-            | fav_colour VARCHAR(64),
+            | age INT DEFAULT NULL,
+            | fav_colour VARCHAR(64) DEFAULT NULL,
             | PRIMARY KEY (id)
             | );
         """.trimMargin())
@@ -86,7 +86,7 @@ class OrmTest {
 
     @Test
     fun `inserting nullable value`() {
-        val user = User(name = Name("Betty"), age = Age(23), favColour = null)
+        val user = User(name = Name("Betty"), age = null, favColour = null)
         userTable.insert(user)
         val result = userTable.get(UserTable.idColumn.withValue(0))
 
@@ -139,17 +139,16 @@ class UserTable(override val name: String, dataSource: DataSource) : Table<User>
         return mutableSetOf(
                 idColumn.withValue(thing.id),
                 nameColumn.withValue(thing.name),
-                ageColumn.withValue(thing.age)
-        ).apply {
-            thing.favColour?.let { add(favColourColumn.withValue(it)) }
-        }
+                ageColumn.withValue(thing.age),
+                favColourColumn.withValue(thing.favColour)
+        )
     }
 
     override fun mapFrom(resultSet: ResultSet): User {
         return User(
                 resultSet.getInt(idColumn.name.value),
                 Name(resultSet.getString(nameColumn.name.value)),
-                Age(resultSet.getInt(ageColumn.name.value)),
+                resultSet.getNullableInt(ageColumn.name.value)?.let { Age(it) },
                 resultSet.getString(favColourColumn.name.value)?.let { Colour(it) }
         )
     }
@@ -162,7 +161,7 @@ data class NameColumn(
 
     private val delegate = StringColumn(name)
 
-    override fun withValue(value: Name): ColumnValueSetter = delegate.withValue(value.value).copy(column = this)
+    override fun withValue(value: Name?): ColumnValueSetter = delegate.withValue(value?.value).copy(column = this)
 }
 
 data class Age(val value: Int)
@@ -172,7 +171,7 @@ data class AgeColumn(
 
     private val delegate = IntColumn(name)
 
-    override fun withValue(value: Age): ColumnValueSetter = delegate.withValue(value.value).copy(column = this)
+    override fun withValue(value: Age?): ColumnValueSetter = delegate.withValue(value?.value).copy(column = this)
 }
 
 data class Colour(val value: String)
@@ -182,10 +181,10 @@ data class ColourColumn(
 
     private val delegate = StringColumn(name)
 
-    override fun withValue(value: Colour): ColumnValueSetter = delegate.withValue(value.value).copy(column = this)
+    override fun withValue(value: Colour?): ColumnValueSetter = delegate.withValue(value?.value).copy(column = this)
 }
 
-data class User(val id: Int = 0, val name: Name, val age: Age, val favColour: Colour?)
+data class User(val id: Int = 0, val name: Name, val age: Age?, val favColour: Colour?)
 
 data class Money(val value: BigDecimal)
 data class AmountColumn(
@@ -194,7 +193,7 @@ data class AmountColumn(
 
     private val delegate = BigDecimalColumn(name)
 
-    override fun withValue(value: Money): ColumnValueSetter = delegate.withValue(value.value).copy(column = this)
+    override fun withValue(value: Money?): ColumnValueSetter = delegate.withValue(value?.value).copy(column = this)
 }
 data class UUIDColumn(
         override val name: ColumnName = ColumnName("id")
@@ -202,7 +201,7 @@ data class UUIDColumn(
 
     private val delegate = StringColumn(name)
 
-    override fun withValue(value: UUID): ColumnValueSetter = delegate.withValue(value.toString()).copy(column = this)
+    override fun withValue(value: UUID?): ColumnValueSetter = delegate.withValue(value.toString()).copy(column = this)
 }
 data class Bill(val id: UUID, val amount: Money)
 
