@@ -22,6 +22,8 @@ class OrmTest {
 
     private fun setup(connection: Connection) {
         connection.use {
+
+            // simple example
             it.createStatement().executeUpdate("""CREATE TABLE user (
             | id INT NOT NULL IDENTITY,
             | name VARCHAR(255) NOT NULL,
@@ -31,6 +33,7 @@ class OrmTest {
             | );
         """.trimMargin())
 
+            // non numerical primary key example
             it.createStatement().executeUpdate("""CREATE TABLE bill (
             | id UUID NOT NULL,
             | amount DOUBLE NOT NULL,
@@ -38,6 +41,7 @@ class OrmTest {
             | );
         """.trimMargin())
 
+            // composite key example
             it.createStatement().executeUpdate("""CREATE TABLE document (
             | id VARCHAR(255) NOT NULL,
             | version INT NOT NULL,
