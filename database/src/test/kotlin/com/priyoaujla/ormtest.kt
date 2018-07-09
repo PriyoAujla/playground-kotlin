@@ -128,13 +128,15 @@ class OrmTest {
     }
 
     @Test
-    fun `find by some columns`() {
+    fun `find by a column`() {
         val bill1 = Bill(amount = Money(BigDecimal(20)))
         val bill2 = Bill(amount = Money(BigDecimal(20)))
         val bill3 = Bill(amount = Money(BigDecimal(20)))
+        val bill4 = Bill(amount = Money(BigDecimal(21)))
         billTable.insert(bill1)
         billTable.insert(bill2)
         billTable.insert(bill3)
+        billTable.insert(bill4)
 
         assertEquals(billTable.findBy(BillTable.amountColumn.withValue(Money(BigDecimal(20)))).toSet(), setOf(bill1, bill2, bill3))
     }
