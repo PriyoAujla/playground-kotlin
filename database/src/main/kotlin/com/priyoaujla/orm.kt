@@ -9,7 +9,7 @@ import kotlin.coroutines.experimental.buildSequence
 
 
 data class ColumnName(val value: String)
-data class ColumnValueSetter(val column: Column, val value: String = "?", val setter: (Int, PreparedStatement) -> PreparedStatement)
+data class ColumnValueSetter(val column: Column, val sqlValueString: String = "?", val setter: (Int, PreparedStatement) -> PreparedStatement)
 
 interface Column {
     val name: ColumnName
@@ -80,7 +80,7 @@ abstract class Table<T>(private val dataSource: DataSource, private val iteratio
             this.dataSource.connection.use {
                 val sqlInsert = """
                 INSERT INTO ${name}(${values.map { it.column.name.value }.joinToString(", ")})
-                    VALUES(${values.map { it.value }.joinToString(", ")});
+                    VALUES(${values.map { it.sqlValueString }.joinToString(", ")});
             """.trimIndent()
 
                 val preparedStatement = it.prepareStatement(sqlInsert)
@@ -103,8 +103,8 @@ abstract class Table<T>(private val dataSource: DataSource, private val iteratio
             this.dataSource.connection.use {
                 val sqlUpdate = """
                 UPDATE $name
-                    SET ${newValues.map { "${it.column.name.value} = ${it.value}" }.joinToString(", ")}
-                    WHERE ${ids.map { "${it.column.name.value} = ${it.value}" }.joinToString(" AND ")}
+                    SET ${newValues.map { "${it.column.name.value} = ${it.sqlValueString}" }.joinToString(", ")}
+                    WHERE ${ids.map { "${it.column.name.value} = ${it.sqlValueString}" }.joinToString(" AND ")}
             """.trimIndent()
 
                 val preparedStatement = it.prepareStatement(sqlUpdate)
@@ -124,7 +124,7 @@ abstract class Table<T>(private val dataSource: DataSource, private val iteratio
         if (ids.isNotEmpty()) {
             this.dataSource.connection.use {
                 val sqlDelete = """
-                    DELETE FROM $name WHERE ${ids.map { "${it.column.name.value} = ${it.value}" }.joinToString(" AND ")}
+                    DELETE FROM $name WHERE ${ids.map { "${it.column.name.value} = ${it.sqlValueString}" }.joinToString(" AND ")}
                 """.trimIndent()
 
                 val preparedStatement = it.prepareStatement(sqlDelete)
@@ -143,7 +143,7 @@ abstract class Table<T>(private val dataSource: DataSource, private val iteratio
             val sqlUpdate = """
                 SELECT *
                     FROM $name
-                    WHERE ${ids.map { "${it.column.name.value} = ${it.value}" }.joinToString(" AND ")}
+                    WHERE ${ids.map { "${it.column.name.value} = ${it.sqlValueString}" }.joinToString(" AND ")}
             """.trimIndent()
 
             val preparedStatement = it.prepareStatement(sqlUpdate)
@@ -182,7 +182,7 @@ abstract class Table<T>(private val dataSource: DataSource, private val iteratio
                             val sqlUpdate =
                             """ SELECT *
                                     FROM $name
-                                    WHERE ${withValues.map { "${it.column.name.value} = ${it.value}" }.joinToString(" AND ")}
+                                    WHERE ${withValues.map { "${it.column.name.value} = ${it.sqlValueString}" }.joinToString(" AND ")}
                                     LIMIT $iterationPageSize
                                     Offset $offset
                             """.trimIndent()
