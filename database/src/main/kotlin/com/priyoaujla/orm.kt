@@ -2,6 +2,7 @@ package com.priyoaujla
 
 import org.hsqldb.types.Types
 import java.math.BigDecimal
+import java.sql.Blob
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import javax.sql.DataSource
@@ -46,6 +47,15 @@ data class BigDecimalColumn(override val name: ColumnName) : TypeColumn<BigDecim
     override fun withValue(value: BigDecimal?) = toColumnValue { index, it ->
         it.apply {
             value?.let { setBigDecimal(index, it) } ?: setNull(index, Types.SQL_DECIMAL)
+        }
+    }
+}
+
+data class BlobColumn(override val name: ColumnName) : TypeColumn<Blob> {
+
+    override fun withValue(value: Blob?) = toColumnValue { index, it ->
+        it.apply {
+            setBlob(index, value)
         }
     }
 }
