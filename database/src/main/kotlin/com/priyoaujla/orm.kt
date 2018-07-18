@@ -169,35 +169,16 @@ abstract class Table<T>(private val dataSource: DataSource, private val iteratio
         }
     }
 
-    internal abstract fun mapTo(thing: T): Set<ColumnValueSetter>
-    internal abstract fun mapFrom(resultSet: ResultSet): T
-
     fun findBy(vararg withValues: ColumnValueSetter): Sequence<T> {
-        val count = dataSource.connection.use {
-            val sqlUpdate = """
-                SELECT count(*) as count
-                    FROM $name """.trimIndent()
-
-            val preparedStatement = it.prepareStatement(sqlUpdate)
-            preparedStatement.executeQuery().use {
-                it.next()
-                it.getInt("count")
-            }
-        }
+        val count = countRows()
         return buildSequence {
             IntRange(0, count)
                     .step(iterationPageSize)
                     .forEach { offset ->
                         val results = dataSource.connection.use {
-                            val sqlUpdate =
-                            """ SELECT *
-                                    FROM $name
-                                    WHERE ${withValues.map { "${it.column.name.value} = ${it.sqlValueString}" }.joinToString(" AND ")}
-                                    LIMIT $iterationPageSize
-                                    Offset $offset
-                            """.trimIndent()
+                            val sql = selectByOffset(*withValues, offset = offset)
 
-                            val preparedStatement = it.prepareStatement(sqlUpdate)
+                            val preparedStatement = it.prepareStatement(sql)
                             withValues.forEachIndexed { index, id -> id.setter(index + 1, preparedStatement) }
 
 
@@ -218,6 +199,66 @@ abstract class Table<T>(private val dataSource: DataSource, private val iteratio
                     }
         }
     }
+
+
+    fun all(): Sequence<T> {
+        val count = countRows()
+        return buildSequence {
+            IntRange(0, count)
+                    .step(iterationPageSize)
+                    .forEach { offset ->
+                        val results = dataSource.connection.use {
+                            val sqlUpdate = selectByOffset(offset = offset)
+
+                            val preparedStatement = it.prepareStatement(sqlUpdate)
+
+                            val results = preparedStatement.executeQuery().use { resultSet ->
+                                val collector = mutableListOf<T>()
+                                while (resultSet.next()) {
+                                    collector.add(mapFrom(resultSet))
+                                }
+                                collector
+                            }
+
+                            results
+                        }
+
+                        if (results.isNotEmpty()) {
+                            yieldAll(results)
+                        }
+                    }
+        }
+    }
+
+    private fun selectByOffset(vararg withValues: ColumnValueSetter, offset: Int): String {
+        val where = if(withValues.isNotEmpty()) {
+            """WHERE ${withValues.map { "${it.column.name.value} = ${it.sqlValueString}" }.joinToString(" AND ")}"""
+        } else {
+            ""
+        }
+        return """ SELECT *
+                        FROM $name
+                        $where
+                        LIMIT $iterationPageSize
+                        Offset $offset
+                """.trimIndent()
+    }
+    private fun countRows(): Int {
+        return dataSource.connection.use {
+            val sqlUpdate = """
+                    SELECT count(*) as count
+                        FROM $name """.trimIndent()
+
+            val preparedStatement = it.prepareStatement(sqlUpdate)
+            preparedStatement.executeQuery().use {
+                it.next()
+                it.getInt("count")
+            }
+        }
+    }
+
+    internal abstract fun mapTo(thing: T): Set<ColumnValueSetter>
+    internal abstract fun mapFrom(resultSet: ResultSet): T
 }
 
 fun ResultSet.getNullableInt(columnLabel: String): Int? {
