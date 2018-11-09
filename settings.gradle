@@ -1,3 +1,4 @@
 rootProject.name = 'playground'
-rootProject.name = 'playground'
 include 'database'
+include 'idempotance-with-recovery'
+

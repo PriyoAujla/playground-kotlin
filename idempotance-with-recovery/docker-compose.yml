@@ -1,0 +1,9 @@
+version: '3'
+
+services:
+  postgresql:
+    image: postgres:9.5
+    volumes:
+      - ./database/bootstrap.sql:/docker-entrypoint-initdb.d/bootstrap.sql
+    ports:
+    - "127.0.0.1:5432:5432"
