@@ -1,8 +1,8 @@
 package com.priyoaujla
 
-import com.fasterxml.jackson.databind.JsonNode
+import com.google.gson.JsonObject
 
-data class BusinessEvent(val name: Name, val payload: JsonNode) {
+data class BusinessEvent(val name: Name, val payload: JsonObject) {
     enum class Name(val value: String) {
         Subscribed("subscribed"),
         CampaignCreated("campaign-created"),
