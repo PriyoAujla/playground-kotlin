@@ -1,16 +1,13 @@
 package com.priyoaujla
 
-import com.ptrbrynt.jsondsl.jsonObject
 import java.util.concurrent.CopyOnWriteArrayList
 
 class MailingListSubscriber(
         private val emailInbox: EmailInbox,
-        private val storage: BusinessEventStorage
+        private val subscription: Subscription
 ){
 
-    fun subscribe() = storage.insert(BusinessEvent(BusinessEvent.Name.Subscribed, jsonObject {
-        "email" to emailInbox.address.value
-    }))
+    fun subscribe() = subscription.add(emailInbox.address)
 }
 
 class EmailMarketer(
