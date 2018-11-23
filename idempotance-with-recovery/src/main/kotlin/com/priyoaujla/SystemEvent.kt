@@ -1,8 +1,8 @@
 package com.priyoaujla
 
-import com.fasterxml.jackson.databind.JsonNode
+import com.google.gson.JsonObject
 
-data class SystemEvent(val name: Name, val payload: JsonNode) {
+data class SystemEvent(val name: Name, val payload: JsonObject) {
     enum class Name(name: String) {
         SendingEmail("sending-email"),
         ErrorSendingEmail("error-sending-email")
