@@ -1,21 +1,40 @@
 package com.priyoaujla
 
 import com.ptrbrynt.jsondsl.jsonObject
+import java.util.concurrent.CopyOnWriteArrayList
 
-class SignupAgent(
+class MailingListSubscriber(
         private val emailInbox: EmailInbox,
         private val storage: BusinessEventStorage
-): () -> Unit {
+){
 
-    override fun invoke() = storage.insert(BusinessEvent(BusinessEvent.Name.Subscribed, jsonObject {
-        "email" to emailInbox.address().value
+    fun subscribe() = storage.insert(BusinessEvent(BusinessEvent.Name.Subscribed, jsonObject {
+        "email" to emailInbox.address.value
     }))
+}
+
+class EmailMarketer(
+    private val storage: BusinessEventStorage
+) {
+    fun sendEmail(): Sequence<BusinessEvent> {
+        return storage.all()
+    }
 }
 
 
 interface EmailInbox {
+    val address: EmailAddress
     fun list(): List<Email>
-    fun address(): EmailAddress
+}
+
+class ThreadSafeEmailInbox(override val address: EmailAddress) :  EmailInbox {
+
+    private val inbox = CopyOnWriteArrayList<Email>()
+
+    override fun list(): List<Email> {
+        return inbox.toList()
+    }
+
 }
 
 data class Email(val subject: String, val body: String)
