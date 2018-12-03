@@ -1,4 +1,4 @@
-CREATE TABLE transactor_events (
+CREATE TABLE action_arbitration (
   id text NOT NULL,
   type text NOT NULL,
   attempt SMALLINT NOT NULL,

@@ -4,10 +4,10 @@ import java.util.concurrent.CopyOnWriteArrayList
 
 class MailingListSubscriber(
         private val emailInbox: EmailInbox,
-        private val subscription: Subscription
+        private val subscriptions: Subscriptions
 ){
 
-    fun subscribe() = subscription.add(emailInbox.address)
+    fun subscribe() = subscriptions.subscribe(emailInbox.address)
 }
 
 class EmailMarketer(
