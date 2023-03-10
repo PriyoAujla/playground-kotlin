@@ -63,3 +63,5 @@ hs_err_pid*
 
 /.idea/
 /json-parser/build/
+/idempotance-with-recovery/build/
+/database/build/
