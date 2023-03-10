@@ -50,7 +50,7 @@ class JsonLexerTests {
             JsonLexer.JsonToken.OpenBrace,
             JsonLexer.JsonToken.JsonString(raw = "propertyKey"),
             JsonLexer.JsonToken.Colon,
-            JsonLexer.JsonToken.JsonNumber(raw = 1234),
+            JsonLexer.JsonToken.JsonNumber(raw = 1234L),
             JsonLexer.JsonToken.ClosedBrace
         )
     }
