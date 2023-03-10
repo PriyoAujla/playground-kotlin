@@ -1,4 +1,5 @@
 rootProject.name = 'playground'
 include 'database'
 include 'idempotance-with-recovery'
+include 'json-parser'
 
